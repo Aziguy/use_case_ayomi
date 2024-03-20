@@ -1,38 +1,16 @@
-from fastapi import FastAPI, Form, HTTPException
-from pydantic import BaseModel
-from calculator import Calculator
-from starlette.responses import HTMLResponse
+from pydantic import BaseModel, Field
+import models
+from fastapi import FastAPI
+from routers import router
+from database import engine
 
 app = FastAPI()
-calculator = Calculator()
+
+app.include_router(router)
+
+models.Base.metadata.create_all(bind=engine)
 
 
 class Expression(BaseModel):
-    expression: str
-
-
-@app.get("/", response_class=HTMLResponse)
-async def home_page():
-    return """
-    <html>
-    <head>
-        <title>RPN Calculator</title>
-    </head>
-    <body>
-        <h1>Calculator</h1>
-        <form action="/calculate/" method="post">
-            <input type="text" name="expression" placeholder="Enter expression">
-            <button type="submit">Calculate</button>
-        </form>
-    </body>
-    </html>
-    """
-
-
-@app.post("/calculate/")
-async def calculate(expression: str = Form(...)):
-    try:
-        result = calculator.evaluate_expression(expression)
-        return {"result": result}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    expression: str = Field(min_length=1)
+    result: float = Field(gt=-1, lt=101)
