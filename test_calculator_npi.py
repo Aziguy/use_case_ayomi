@@ -1,12 +1,32 @@
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app import app
+import models
 from calculator import Calculator
-
 import pytest
+
+# Create a db session
+SQLALCHEMY_DATABASE_URL = "sqlite:///./rpn_calculator_db.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Configure db for test
+models.Base.metadata.create_all(bind=engine)
 
 
 class TestCalculator:
     @pytest.fixture
     def calculator(self):
         return Calculator()
+
+    @pytest.fixture
+    def test_db(self):
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
     def test_valid_expression(self, calculator):
         result = calculator.evaluate_expression("3 4 + 5 *")
@@ -63,3 +83,22 @@ class TestCalculator:
     def test_modulo_operator(self, calculator):
         result = calculator.evaluate_expression("10 3 %")
         assert result == 1
+
+    def test_home_page(self):
+        client = TestClient(app)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "Calculations History" in response.text
+
+    def test_calculate(self):
+        client = TestClient(app)
+        response = client.post("/calculate/", data={"expression": "2 3 +"})
+        assert response.status_code == 200
+        assert "result" in response.json()
+
+    def test_export_to_csv(self):
+        client = TestClient(app)
+        response = client.get("/export-to-csv/")
+        assert response.status_code == 200
+        assert "message" in response.json()
+        assert "Data exported to CSV successfully" in response.json()["message"]

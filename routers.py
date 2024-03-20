@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from calculator import Calculator
 import models
 from database import get_db
+import csv
 
 router = APIRouter()
 calculator = Calculator()
@@ -29,3 +30,18 @@ async def calculate(expression: str = Form(...), db: Session = Depends(get_db)):
         return {"result": result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/export-to-csv/")
+def export_to_csv(db: Session = Depends(get_db)):
+    try:
+        calculations = db.query(models.Calculation).all()
+        with open('calculations.csv', 'w', newline='') as csvfile:
+            fieldnames = ['id', 'expression', 'result']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for calculation in calculations:
+                writer.writerow({'id': calculation.id, 'expression': calculation.expression, 'result': calculation.result})
+        return {"message": "Data exported to CSV successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
