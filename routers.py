@@ -16,12 +16,27 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 async def home_page(request: Request, db: Session = Depends(get_db)):
+    """
+    Displays the home page of the API.
+
+    Returns:
+    - str: HTML of the home page.
+    """
     calculations = db.query(models.Calculation).all()
     return templates.TemplateResponse("home_page.html", {"request": request, "calculations": calculations})
 
 
 @router.post("/calculate/")
 async def calculate(expression: str = Form(...), db: Session = Depends(get_db)):
+    """
+    Calculates the result of a mathematical expression.
+
+    Args:
+    - expression (str): The mathematical expression to evaluate.
+
+    Returns:
+    - CalculationResult: Object containing the result of the calculation.
+    """
     try:
         result = calculator.evaluate_expression(expression)
         calculation_model = models.Calculation(expression=expression, result=result)
@@ -34,6 +49,12 @@ async def calculate(expression: str = Form(...), db: Session = Depends(get_db)):
 
 @router.get("/export-to-csv/")
 def export_to_csv(db: Session = Depends(get_db)):
+    """
+    Exports data from the database to a CSV file.
+
+    Returns:
+    - dict: Dictionary with a message indicating successful export.
+    """
     try:
         calculations = db.query(models.Calculation).all()
         with open('calculations.csv', 'w', newline='') as csvfile:
