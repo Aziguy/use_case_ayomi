@@ -17,7 +17,8 @@ class Calculator:
 
         Raises:
             ValueError: If the expression is invalid (example: not enough operands,
-                         unknown token, division by zero).
+                         unknown token).
+            ZeroDivisionError: If a division by zero is attempted.
         """
         tokens = expression.split()
         for token in tokens:
@@ -31,7 +32,7 @@ class Calculator:
                     operand2 = self.stack.pop()
                     operand1 = self.stack.pop()
                     if operand2 == 0:
-                        raise ValueError("Modulo by zero error")
+                        raise ZeroDivisionError("Division by zero error")
                     result = operand1 % operand2
                     self.stack.append(result)
                 elif token in ['+', '-', '*', '/']:
@@ -47,7 +48,7 @@ class Calculator:
                         result = operand1 * operand2
                     elif token == '/':
                         if operand2 == 0:
-                            raise ValueError("Division by zero error")
+                            raise ZeroDivisionError("Division by zero error")
                         result = operand1 / operand2
                     self.stack.append(result)
                 else:
